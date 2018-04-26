@@ -238,14 +238,14 @@ void Game::Update(DX::StepTimer const& timer)
 	case X:
 		if (currentSelection != -1)
 		{
-			m_displayList[currentSelection].m_position.x++;
+			m_displayList[currentSelection].m_position.x--;
 		}
 		break;
 
 	case Y:
 		if (currentSelection != -1)
 		{
-			m_displayList[currentSelection].m_position.y++;
+			m_displayList[currentSelection].m_position.y--;
 		}
 		break;
 
