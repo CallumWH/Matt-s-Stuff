@@ -58,6 +58,8 @@ public:
 	//My Functions]
 	int ReturnPickedSelection();
 	void SetManipulationState(manipulationState state);
+	void WorldMousePosition();
+	void PickObject();
 
 #ifdef DXTK_AUDIO
 	void NewAudioDevice();
@@ -74,7 +76,7 @@ private:
 	void CreateWindowSizeDependentResources();
 
 	//picking function
-	void PickObject();
+	
 
 	void XM_CALLCONV DrawGrid(DirectX::FXMVECTOR xAxis, DirectX::FXMVECTOR yAxis, DirectX::FXMVECTOR origin, size_t xdivs, size_t ydivs, DirectX::GXMVECTOR color);
 
@@ -101,6 +103,10 @@ private:
 
 	int currentSelection;
 	int oldSelection;
+
+	float worldMouseX;
+	float worldMouseY;
+	float worldMouseZ;
 
 	RECT clientRect;
 

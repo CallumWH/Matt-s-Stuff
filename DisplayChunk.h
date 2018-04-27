@@ -18,11 +18,14 @@ public:
 	void SaveHeightMap();			//saves the heigtmap back to file.
 	void UpdateTerrain();			//updates the geometry based on the heigtmap
 	void GenerateHeightmap();		//creates or alters the heightmap
+	DirectX::XMFLOAT3 GetVertexPositions(int i, int j) { return m_terrainGeometry[i][j].position; };
+	int GetTerrainResolution() { return TERRAINRESOLUTION; };
 	std::unique_ptr<DirectX::PrimitiveBatch<DirectX::VertexPositionNormalTexture>>  m_batch;
 	std::unique_ptr<DirectX::BasicEffect>       m_terrainEffect;
 
 	ID3D11ShaderResourceView *					m_texture_diffuse;				//diffuse texture
 	Microsoft::WRL::ComPtr<ID3D11InputLayout>   m_terrainInputLayout;
+	float   m_terrainPositionScalingFactor;	//factor we multiply the position by to convert it from its native resolution( 0- Terrain Resolution) to full scale size in metres dictated by m_Terrainsize
 
 private:
 	
@@ -33,7 +36,7 @@ private:
 	float	m_terrainHeightScale;
 	int		m_terrainSize;				//size of terrain in metres
 	float	m_textureCoordStep;			//step in texture coordinates between each vertex row / column
-	float   m_terrainPositionScalingFactor;	//factor we multiply the position by to convert it from its native resolution( 0- Terrain Resolution) to full scale size in metres dictated by m_Terrainsize
+	
 	
 	std::string m_name;
 	int m_chunk_x_size_metres;

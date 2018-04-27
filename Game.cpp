@@ -158,6 +158,8 @@ void Game::Update(DX::StepTimer const& timer)
 	int deltaMouseY = oldMouseY - m_InputCommands.mouseY;
 	oldMouseY = m_InputCommands.mouseY;
 
+	float deltaMouseDistance = sqrt((pow(deltaMouseX, 2.0f)+ pow(deltaMouseY, 2.0f)));
+
 	//only take input if right mouse is held down
 	if (m_InputCommands.rightClick)
 	{
@@ -230,6 +232,8 @@ void Game::Update(DX::StepTimer const& timer)
 
 	oldSelection = currentSelection;
 
+	
+
 	//Do something according to state
 
 
@@ -238,21 +242,34 @@ void Game::Update(DX::StepTimer const& timer)
 	case X:
 		if (currentSelection != -1)
 		{
-			m_displayList[currentSelection].m_position.x--;
+			if (m_InputCommands.leftClick)
+			{
+				WorldMousePosition();
+				m_displayList[currentSelection].m_position.x = worldMouseX;
+				m_displayList[currentSelection].m_position.z = worldMouseZ;
+			}
+			
 		}
 		break;
 
 	case Y:
 		if (currentSelection != -1)
 		{
-			m_displayList[currentSelection].m_position.y--;
+			m_displayList[currentSelection].m_position.y++;
 		}
-		break;
+
+		for (int i = 0; i < 128; i++)
+		{
+			for (int j = 0; j < 128; j++)
+			{
+			}
+		}
 
 	case Z:
 		if (currentSelection != -1)
 		{
 			m_displayList[currentSelection].m_position.z++;
+
 		}
 		break;
 
@@ -260,7 +277,7 @@ void Game::Update(DX::StepTimer const& timer)
 	{
 		if (currentSelection != -1)
 		{
-			m_displayList[currentSelection].m_scale * 1.1f;
+			m_displayList[currentSelection].m_scale *= 1.1f;
 		}
 		break;
 	}
@@ -353,6 +370,57 @@ void Game::PickObject()
 	}
 }
 
+void Game::WorldMousePosition()
+{
+	
+
+	//D3D11_VIEWPORT viewPort = m_deviceResources->GetScreenViewport();
+	//viewPort.
+	float mouseX = m_InputCommands.mouseX;
+	float mouseY = m_InputCommands.mouseY;
+
+	float minDistancer = std::numeric_limits<float>::max();
+
+	const XMVECTOR nearSource = XMVectorSet((float)mouseX, (float)mouseY, 0.0f, 1.0f);
+	const XMVECTOR farSource = XMVectorSet((float)mouseX, (float)mouseY, 1.0f, 1.0f);
+
+	for (int i = 0; i < m_displayChunk.GetTerrainResolution(); i++)
+	{
+		for (int j = 0; j < m_displayChunk.GetTerrainResolution(); j++)
+		{
+			DirectX::XMFLOAT3 terrainPosition = m_displayChunk.GetVertexPositions(i, j);
+			const XMVECTORF32 scale = { 1.0f, 1.0f, 1.0f };
+			const XMVECTORF32 translate = { terrainPosition.x, terrainPosition.y, terrainPosition.z };
+			
+			//convert degrees into radians for rotation matrix
+			XMVECTOR rotate = Quaternion::CreateFromYawPitchRoll(0.0f, 0.0f, 0.0f);
+
+			XMMATRIX local = m_world * XMMatrixTransformation(g_XMZero, Quaternion::Identity, scale, g_XMZero, rotate, translate);
+			
+			XMVECTOR nearPoint = XMVector3Unproject(nearSource, 0.0f, 0.0f, clientRect.right, clientRect.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+			XMVECTOR farPoint = XMVector3Unproject(farSource, 0.0f, 0.0f, clientRect.right, clientRect.bottom, m_deviceResources->GetScreenViewport().MinDepth, m_deviceResources->GetScreenViewport().MaxDepth, m_projection, m_view, local);
+
+			XMVECTOR direction = farPoint - nearPoint;
+			direction = XMVector3Normalize(direction);
+			XMFLOAT3 center = XMFLOAT3(terrainPosition.x + (m_displayChunk.m_terrainPositionScalingFactor / 2), 0.0f, terrainPosition.z + (m_displayChunk.m_terrainPositionScalingFactor / 2));
+			XMFLOAT3 extents = XMFLOAT3(m_displayChunk.m_terrainPositionScalingFactor /2, 0.0f, m_displayChunk.m_terrainPositionScalingFactor/2);
+			BoundingBox terrainBB = BoundingBox(center, extents);
+			
+			float distance;
+			if (terrainBB.Intersects(nearPoint, direction, distance))
+			{
+				if (distance < minDistancer)
+				{
+					minDistancer = distance;
+					worldMouseX = center.x*2;
+					worldMouseY = center.y;
+					worldMouseZ = center.z*2;
+				}
+			}
+		}
+	}
+}
+
 int Game::ReturnPickedSelection()
 {
 	return currentSelection;
@@ -389,7 +457,9 @@ void Game::Render()
 	m_sprites->Begin();
 	WCHAR   Buffer[256];
 	std::wstring var = L"Cam X: " + std::to_wstring(m_camPosition.x) + L"Cam Z: " + std::to_wstring(m_camPosition.z);
+	std::wstring var2 = L"World Mouse X: " + std::to_wstring(worldMouseX) + L"World Mouse Z: " + std::to_wstring(worldMouseZ);
 	m_font->DrawString(m_sprites.get(), var.c_str(), XMFLOAT2(100, 10), Colors::Yellow);
+	m_font->DrawString(m_sprites.get(), var2.c_str(), XMFLOAT2(100, 40), Colors::Yellow);
 	m_sprites->End();
 
 	//RENDER OBJECTS FROM SCENEGRAPH
